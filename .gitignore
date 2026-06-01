@@ -1,0 +1,38 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# VS Code local settings
+.vscode/
+
+# Jupyter temporary files
+.ipynb_checkpoints/
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Training outputs
+results/logs/*
+results/videos/*
+results/checkpoints/*
+
+# Large model files
+*.pt
+*.pth
+*.ckpt
+*.zip
+
+# System files
+.DS_Store
+
+# Keep empty output directories
+!results/logs/.gitkeep
+!results/videos/.gitkeep
+!results/checkpoints/.gitkeep
