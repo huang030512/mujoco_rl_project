@@ -1,0 +1,23 @@
+<mujoco model="hinge_rod">
+  <compiler angle="degree"/>
+
+  <option timestep="0.002" gravity="0 0 -9.81"/>
+
+  <worldbody>
+    <!-- 地面 -->
+    <geom name="floor"
+          type="plane"
+          size="2 2 0.1"
+          rgba="0.8 0.8 0.8 1"/>
+
+    <!-- 旋转杆 -->
+    <body name="hinge_rod" pos="0.5 0 0.5">
+      <joint name="rod_hinge" type="hinge" axis="0 1 0"/>
+      <geom name="rod_geom" type="capsule" size="0.05 0.3" mass="0.5"
+            rgba="0.8 0.2 0.2 1"/>
+    </body>
+  </worldbody>
+  <actuator>
+    <motor joint="rod_hinge" ctrlrange="-5 5" gear="1"/>
+  </actuator>
+</mujoco>

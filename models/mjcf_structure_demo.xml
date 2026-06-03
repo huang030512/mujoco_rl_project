@@ -45,4 +45,7 @@
     </body>
 
   </worldbody>
+  <actuator>
+    <motor joint="rod_hinge" ctrlrange="-5 5" gear="1"/>
+  </actuator>
 </mujoco>
