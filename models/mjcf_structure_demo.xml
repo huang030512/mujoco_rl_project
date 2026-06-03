@@ -1,0 +1,48 @@
+<mujoco model="mjcf_demo">
+  <compiler angle="degree"/>
+
+  <option timestep="0.002" gravity="0 0 -9.81"/>
+
+  <worldbody>
+    <!-- 地面 -->
+    <geom name="floor"
+          type="plane"
+          size="2 2 0.1"
+          rgba="0.8 0.8 0.8 1"/>
+
+    <!-- 自由盒子 -->
+    <body name="free_box" pos="0 0 0.5">
+      <freejoint/>
+      <geom name="box_geom" type="box" size="0.1 0.1 0.1" mass="1"
+            rgba="0.2 0.5 0.8 1"/>
+    </body>
+
+    <!-- 旋转杆 -->
+    <body name="hinge_rod" pos="0.5 0 0.2">
+      <joint name="rod_hinge" type="hinge" axis="0 1 0"/>
+      <geom name="rod_geom" type="capsule" size="0.05 0.3" mass="0.5"
+            rgba="0.8 0.2 0.2 1"/>
+    </body>
+
+    <!-- 滑动块 -->
+    <body name="slide_block" pos="-0.5 0 0.3">
+      <joint name="block_slide" type="slide" axis="1 0 0"/>
+      <geom name="block_geom" type="box" size="0.1 0.1 0.1" mass="0.8"
+            rgba="0.2 0.8 0.2 1"/>
+    </body>
+
+    <!-- 父子嵌套示例 -->
+    <body name="parent_body" pos="0 0 0.7">
+      <joint name="parent_free" type="free"/>
+      <geom name="parent_geom" type="sphere" size="0.1" mass="0.5"
+            rgba="0.2 0.2 0.8 1"/>
+
+      <body name="child_body" pos="0 0 0.2">
+        <joint name="child_hinge" type="hinge" axis="0 0 1"/>
+        <geom name="child_geom" type="box" size="0.05 0.05 0.1" mass="0.2"
+              rgba="0.9 0.6 0.1 1"/>
+      </body>
+    </body>
+
+  </worldbody>
+</mujoco>
