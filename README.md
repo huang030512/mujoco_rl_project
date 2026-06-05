@@ -23,6 +23,62 @@
 - 位置变化曲线：`assets/week01_box_free_fall_position.png`
 - 速度变化曲线：`assets/week01_box_free_fall_velocity.png`
 
+## 第二周成果：单关节控制与强化学习训练闭环
+
+第二周完成了从自由落体模型到可控关节模型的过渡，并基于单关节旋转杆构建了 MuJoCo + Gymnasium + Stable-Baselines3 的强化学习训练闭环。
+
+主要完成内容包括：
+
+- 搭建单关节旋转杆模型 `models/hinge_rod.xml`；
+- 理解 MJCF 中 `<joint>` 与 `<actuator>` 的对应关系；
+- 实现单关节 PD 控制实验，观察不同 `Kp`、`Kd` 参数对系统响应的影响；
+- 将 MuJoCo 单关节模型封装为 Gymnasium 环境；
+- 使用 Stable-Baselines3 PPO 训练单关节摆杆到达目标角度；
+- 完成模型保存、评估、测试和训练曲线可视化；
+- 整理强化学习训练闭环实验记录。
+
+阶段性结果显示，PPO 策略能够将单关节旋转杆稳定控制到目标角度附近，完成从自建 MuJoCo 模型到强化学习控制策略的完整闭环。
+
+相关文件包括：
+
+- `models/hinge_rod.xml`
+- `src/hinge_rod_env.py`
+- `src/train_hinge_rod_ppo.py`
+- `src/evaluate_hinge_rod_ppo.py`
+- `src/test_hinge_rod_env.py`
+- `models/ppo_hinge_rod/final_model.zip`
+- `models/ppo_hinge_rod/training_curves.png`
+- `notes/week02_ppo_rl_demo.md`
+
+## 第三周成果：Panda Lift 机械臂操作任务分析
+
+第三周从单关节强化学习环境进入 robosuite 标准机械臂操作任务，完成了 Panda Lift 环境运行、任务接口分析和随机策略 baseline。
+
+主要完成内容包括：
+
+- 跑通 robosuite Lift 任务，使用 Panda 七自由度机械臂和两指夹爪；
+- 理解 observation 字段，包括机械臂关节状态、末端执行器位置、方块位置和相对位置信息；
+- 分析 7 维连续 action，理解其对末端位置、姿态和夹爪开合的控制作用；
+- 记录 reward、done、success 和 reset 随机化对任务的影响；
+- 实现随机策略 baseline，运行 5 个 episode；
+- 随机策略平均 reward 为 `3.75`，成功率为 `0.0`；
+- 归档 Panda Lift 随机动作演示视频；
+- 整理 Panda Lift 任务机制和 baseline 实验记录。
+
+阶段性结果显示，Panda Lift 并不是简单的机械臂运动演示，而是一个包含状态观测、连续动作控制、奖励反馈和成功判定的标准机械臂操作强化学习任务。随机策略无法完成抓取与抬升，说明后续需要基于 observation 设计手工策略或训练强化学习策略。
+
+相关文件包括：
+
+- `src/test_robosuite_lift.py`
+- `src/test_panda_action_dimensions.py`
+- `src/test_panda_gripper.py`
+- `src/test_panda_reset.py`
+- `src/analyze_panda_lift_task.py`
+- `src/run_panda_lift_random_baseline.py`
+- `assets/week03_panda_lift_random_demo.mp4`
+- `notes/week03_panda_lift_intro.md`
+- `notes/week03_panda_lift_baseline_analysis.md`
+
 ## 项目结构
 
 ```text
@@ -30,125 +86,38 @@ mujoco_rl_project/
 ├── README.md
 ├── assets/
 │   ├── week01_box_free_fall_position.png
-│   └── week01_box_free_fall_velocity.png
+│   ├── week01_box_free_fall_velocity.png
+│   ├── week02_joint_motion.png
+│   ├── week02_single_joint_pd_*.png
+│   └── week03_panda_lift_random_demo.mp4
 ├── models/
-│   └── simple_box.xml
+│   ├── simple_box.xml
+│   ├── hinge_rod.xml
+│   └── ppo_hinge_rod/
+│       ├── final_model.zip
+│       └── training_curves.png
 ├── notes/
 │   ├── week01_day04_mjmodel_mjdata.md
 │   ├── week01_day05_simulation_analysis.md
-│   └── week01_review.md
+│   ├── week01_review.md
+│   ├── week02_pd_demo.md
+│   ├── week02_ppo_rl_demo.md
+│   ├── week03_panda_lift_intro.md
+│   └── week03_panda_lift_baseline_analysis.md
 └── src/
     ├── check_mujoco.py
     ├── inspect_model.py
     ├── run_simple_box.py
-    └── simulate_box_plot.py
-````
-
-## 运行方式
-
-建议按以下顺序执行：检查环境、检查模型结构、运行自由落体仿真、生成结果曲线。
-
-### 1. 检查 MuJoCo 环境
-
-在项目根目录下执行：
-
-```bash
-python src/check_mujoco.py
-```
-
-该脚本用于确认 Python、MuJoCo 与 NumPy 环境能够正常运行。
-
-### 2. 检查模型结构与状态字段
-
-```bash
-python src/inspect_model.py
-```
-
-该脚本加载 `models/simple_box.xml`，用于查看模型中的 body、joint、geom、actuator，以及 `qpos`、`qvel`、`ctrl` 等状态字段。
-
-在当前模型中，盒子使用自由关节 `<freejoint/>`，因此模型状态包含：
-
-* `nq = 7`：3 个平移位置分量和 4 个四元数姿态分量；
-* `nv = 6`：3 个线速度分量和 3 个角速度分量；
-* `nu = 0`：当前自由落体模型未配置 actuator。
-
-### 3. 运行自由落体仿真
-
-```bash
-python src/run_simple_box.py
-```
-
-该脚本加载 `models/simple_box.xml`，创建仿真状态对象，并通过循环调用 `mj_step(model, data)` 推进盒子自由落体过程。
-
-### 4. 生成自由落体结果曲线
-
-```bash
-python src/simulate_box_plot.py
-```
-
-运行后生成以下图像：
-
-* `assets/week01_box_free_fall_position.png`：盒子 z 方向位置随时间变化曲线；
-* `assets/week01_box_free_fall_velocity.png`：盒子 z 方向速度随时间变化曲线。
-
-其中：
-
-* `qpos[2]` 表示盒子在 z 轴方向的位置，可用于观察高度变化；
-* `qvel[2]` 表示盒子在 z 轴方向的速度，负值表示盒子正在向下运动。
-
-## 第一周技术链路
-
-```text
-models/simple_box.xml
-        ↓
-MuJoCo 加载 XML 模型
-        ↓
-MjModel 保存模型结构和固定参数
-MjData 保存运行过程中的动态状态
-        ↓
-mj_step(model, data) 推进仿真
-        ↓
-读取 qpos[2] 和 qvel[2]
-        ↓
-绘制盒子竖直位置与竖直速度曲线
-        ↓
-分析自由落体、触地、短暂反弹和最终稳定现象
-```
-
-`models/simple_box.xml` 定义了仿真中的地面、盒子、质量、尺寸、重力和自由关节等内容。MuJoCo 加载该模型后，使用 `MjModel` 保存模型结构与固定参数，并使用 `MjData` 保存运行过程中的动态状态。程序通过持续调用 `mj_step()` 更新仿真状态，再读取盒子的竖直位置和速度并绘制结果曲线。
-
-## 第一周实验现象
-
-在自由落体实验中，盒子从约 `0.5 m` 的初始高度释放，在重力作用下沿 z 轴负方向下落。
-
-根据实际曲线观察结果：
-
-* 盒子第一次触地时间约为 `0.25 s`；
-* 最终稳定高度约为 `0.1 m`；
-* 盒子接触地面后出现了短暂反弹或振荡现象；
-* 随着仿真继续推进，盒子高度逐渐稳定，竖直速度最终趋近于零。
-
-触地后的短暂反弹是由于盒子接触地面时仍具有向下速度，地面接触作用阻止盒子继续穿透，从而使竖直速度短暂发生方向变化。
-
-## 第一周复盘文档
-
-第一周复盘总结记录了本周实际完成内容、核心概念理解、自由落体实验分析、遇到的问题及解决过程，以及第2周学习准备：
-
-* `notes/week01_review.md`
-
-## 可复现性说明
-
-第一周成果具备基础可复现性，原因如下：
-
-* `models/simple_box.xml` 固定定义了自由落体实验使用的模型结构和仿真参数；
-* `src/` 目录中保存了环境检查、模型读取、仿真运行和绘图脚本；
-* `assets/` 目录中保存了由实验生成的位置曲线和速度曲线；
-* `notes/` 目录中保存了模型字段理解、实验结果分析和周复盘记录；
-* 本 README 提供了从环境检查到结果生成的完整运行方式。
-
-在配置相同 MuJoCo 环境后，其他人可以按照本 README 中的步骤重新运行脚本，并观察到同类型的盒子自由落体、触地反弹和最终稳定现象。
-
-## 后续计划
-
-下一阶段将进入 MJCF 建模基础学习，重点理解 `<body>`、`<geom>`、`<joint>` 与 `<actuator>` 等元素之间的关系，并逐步从简单自由落体模型过渡到具有关节和控制输入的自建机器人模型，为后续强化学习控制实验做好准备。
-
+    ├── simulate_box_plot.py
+    ├── read_joint.py
+    ├── run_single_joint_pd.py
+    ├── hinge_rod_env.py
+    ├── train_hinge_rod_ppo.py
+    ├── evaluate_hinge_rod_ppo.py
+    ├── test_hinge_rod_env.py
+    ├── test_robosuite_lift.py
+    ├── test_panda_action_dimensions.py
+    ├── test_panda_gripper.py
+    ├── test_panda_reset.py
+    ├── analyze_panda_lift_task.py
+    └── run_panda_lift_random_baseline.py
