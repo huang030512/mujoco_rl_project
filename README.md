@@ -2,39 +2,41 @@
 
 ## 项目简介
 
-本项目是一个面向机器人学习、强化学习控制与具身智能方向的 MuJoCo / robosuite / Stable-Baselines3 实验项目。
+本项目是一个面向机器人学习、强化学习控制、模仿学习与具身智能方向的 MuJoCo / robosuite / Stable-Baselines3 / PyTorch 实验项目。
 
-项目从最基础的 MuJoCo 模型加载和自由落体仿真开始，逐步扩展到单关节控制、PPO 强化学习训练闭环，并进一步接入 robosuite Panda Lift 机械臂操作任务，完成随机策略、手工策略和最小 SAC 训练流程。
+项目从最基础的 MuJoCo 模型加载和自由落体仿真开始，逐步扩展到单关节控制、PPO 强化学习训练闭环，并进一步接入 robosuite Panda Lift 机械臂操作任务，完成随机策略、手工策略、最小 SAC 训练流程和 Behavior Cloning 模仿学习实验。
 
-本项目的重点不是声称已经获得高成功率的机械臂抓取策略，而是展示一个完整、可复现、可解释的机器人强化学习项目搭建过程，包括环境验证、模型理解、控制实验、任务分析、训练流程、结果记录和真实边界表达。
+本项目的重点不是声称已经获得高成功率的机械臂抓取策略，而是展示一个完整、可复现、可解释的机器人学习项目搭建过程，包括环境验证、模型理解、控制实验、任务分析、训练流程、专家数据采集、模仿学习、结果记录和真实边界表达。
 
 ---
 
 ## Project Highlights
 
-- 搭建 MuJoCo + Python 仿真环境，并完成基础模型加载、状态读取和可视化分析；
-- 编写 MJCF 模型，理解 `MjModel`、`MjData`、`qpos`、`qvel`、`ctrl` 等核心数据结构；
-- 完成自由落体仿真实验，记录位置和速度曲线；
-- 搭建单关节可控模型，实现 PD 控制并分析不同参数对系统响应的影响；
-- 将单关节 MuJoCo 模型封装为 Gymnasium 环境，并使用 PPO 完成强化学习训练闭环；
-- 接入 robosuite Panda Lift 任务，分析 observation、action、reward、success 和 reset 机制；
-- 实现 Panda Lift 随机策略 baseline 和手工策略，用于验证任务接口与控制逻辑；
-- 搭建 Panda Lift 最小 SAC 训练流程，完成模型保存、reward 曲线记录和评估脚本；
-- 整理实验记录、结果图、演示视频和项目边界，形成可用于简历展示的 GitHub 作品集。
+* 搭建 MuJoCo + Python 仿真环境，并完成基础模型加载、状态读取和可视化分析；
+* 编写 MJCF 模型，理解 `MjModel`、`MjData`、`qpos`、`qvel`、`ctrl` 等核心数据结构；
+* 完成自由落体仿真实验，记录位置和速度曲线；
+* 搭建单关节可控模型，实现 PD 控制并分析不同参数对系统响应的影响；
+* 将单关节 MuJoCo 模型封装为 Gymnasium 环境，并使用 PPO 完成强化学习训练闭环；
+* 接入 robosuite Panda Lift 任务，分析 observation、action、reward、success 和 reset 机制；
+* 实现 Panda Lift 随机策略 baseline 和手工策略，用于验证任务接口与控制逻辑；
+* 搭建 Panda Lift 最小 SAC 训练流程，完成模型保存、reward 曲线记录和评估脚本；
+* 基于 Panda Lift handcrafted policy 采集 observation-action demonstration 数据，并使用 PyTorch MLP 完成 Behavior Cloning 模仿学习小实验；
+* 整理实验记录、结果图、演示视频和项目边界，形成可用于简历展示的 GitHub 作品集。
 
 ---
 
 ## Tech Stack
 
-- Python 3.10
-- MuJoCo
-- robosuite
-- Gymnasium
-- Stable-Baselines3
-- NumPy
-- Matplotlib
-- Linux / Ubuntu
-- Git / GitHub
+* Python 3.10
+* MuJoCo
+* robosuite
+* Gymnasium
+* Stable-Baselines3
+* PyTorch
+* NumPy
+* Matplotlib
+* Linux / Ubuntu
+* Git / GitHub
 
 ---
 
@@ -56,6 +58,8 @@ mujoco_rl_project/
 │   ├── week02_single_joint_pd_Kp5_Kd2.png
 │   ├── week03_panda_lift_random_demo.mp4
 │   └── week03_panda_lift_handcrafted_ep0.mp4
+├── data/
+│   └── panda_lift_bc_data.npz
 ├── models/
 │   ├── simple_box.xml
 │   ├── mjcf_structure_demo.xml
@@ -63,9 +67,11 @@ mujoco_rl_project/
 │   ├── ppo_hinge_rod/
 │   │   ├── final_model.zip
 │   │   └── training_curves.png
-│   └── sac_panda_lift_minimal/
-│       ├── final_model.zip
-│       └── reward_curve.png
+│   ├── sac_panda_lift_minimal/
+│   │   ├── final_model.zip
+│   │   └── reward_curve.png
+│   └── bc/
+│       └── panda_lift_bc_policy.pt
 ├── notes/
 │   ├── week01_day04_mjmodel_mjdata.md
 │   ├── week01_day05_simulation_analysis.md
@@ -101,7 +107,10 @@ mujoco_rl_project/
 │   ├── panda_lift_rl_env.py
 │   ├── test_panda_lift_rl_env.py
 │   ├── train_panda_lift_sac.py
-│   └── evaluate_panda_lift_sac.py
+│   ├── evaluate_panda_lift_sac.py
+│   ├── collect_panda_lift_bc_data.py
+│   ├── train_panda_lift_bc.py
+│   └── eval_panda_lift_bc.py
 └── results/
     └── README.md
 ```
@@ -124,11 +133,11 @@ src/inspect_model.py
 
 该阶段主要理解：
 
-- MuJoCo XML 模型如何定义物体、地面、重力和自由关节；
-- `MjModel` 表示仿真模型结构；
-- `MjData` 表示仿真运行过程中的状态；
-- `qpos`、`qvel` 如何记录位置和速度；
-- `mj_step()` 如何推进仿真。
+* MuJoCo XML 模型如何定义物体、地面、重力和自由关节；
+* `MjModel` 表示仿真模型结构；
+* `MjData` 表示仿真运行过程中的状态；
+* `qpos`、`qvel` 如何记录位置和速度；
+* `mj_step()` 如何推进仿真。
 
 自由落体实验中，box 从约 0.5 m 高度下落，与地面接触后稳定在约 0.1 m 高度附近，与 box 半高一致。
 
@@ -155,10 +164,10 @@ notes/week02_pd_demo.md
 
 该阶段主要理解：
 
-- `<joint>` 如何定义可运动自由度；
-- `<actuator>` 如何将控制输入作用到关节；
-- `data.ctrl[i]` 如何作为控制量输入；
-- PD 控制中 `Kp` 和 `Kd` 对响应速度、超调和稳定性的影响。
+* `<joint>` 如何定义可运动自由度；
+* `<actuator>` 如何将控制输入作用到关节；
+* `data.ctrl[i]` 如何作为控制量输入；
+* PD 控制中 `Kp` 和 `Kd` 对响应速度、超调和稳定性的影响。
 
 控制形式：
 
@@ -168,10 +177,10 @@ torque = Kp * (target_angle - current_angle) - Kd * current_angular_velocity
 
 实验中测试了多组参数，包括：
 
-- `Kp=5, Kd=2`
-- `Kp=10, Kd=2`
-- `Kp=20, Kd=2`
-- `Kp=20, Kd=6`
+* `Kp=5, Kd=2`
+* `Kp=10, Kd=2`
+* `Kp=20, Kd=2`
+* `Kp=20, Kd=6`
 
 ### Results
 
@@ -200,13 +209,13 @@ notes/week02_ppo_rl_demo.md
 
 该阶段完成了从自建 MuJoCo 模型到强化学习训练的完整闭环：
 
-- 自定义 Gymnasium 环境；
-- 定义 observation space 和 action space；
-- 设计 reward；
-- 使用 PPO 训练策略；
-- 保存模型；
-- 评估训练结果；
-- 绘制角度曲线和 torque 曲线。
+* 自定义 Gymnasium 环境；
+* 定义 observation space 和 action space；
+* 设计 reward；
+* 使用 PPO 训练策略；
+* 保存模型；
+* 评估训练结果；
+* 绘制角度曲线和 torque 曲线。
 
 阶段性结果显示，PPO 策略能够将单关节旋转杆控制到目标角度附近，说明 MuJoCo + Gymnasium + Stable-Baselines3 的训练流程已经跑通。
 
@@ -237,11 +246,11 @@ notes/week03_panda_lift_intro.md
 
 该阶段主要分析：
 
-- Panda 七自由度机械臂和两指夹爪；
-- observation 中的关节状态、末端位姿、夹爪状态、方块位置和相对位置；
-- 7 维连续 action 对末端运动和夹爪开合的控制作用；
-- reward、done、success 和 reset 随机化机制；
-- 为什么随机策略难以完成抓取任务。
+* Panda 七自由度机械臂和两指夹爪；
+* observation 中的关节状态、末端位姿、夹爪状态、方块位置和相对位置；
+* 7 维连续 action 对末端运动和夹爪开合的控制作用；
+* reward、done、success 和 reset 随机化机制；
+* 为什么随机策略难以完成抓取任务。
 
 关键 observation 包括：
 
@@ -310,11 +319,11 @@ notes/week03_panda_lift_handcrafted_policy.md
 
 该部分的意义在于：
 
-- 验证 observation 读取是否正确；
-- 验证 action 控制方向是否正确；
-- 验证 gripper 开合符号是否正确；
-- 验证 reward 和 success 机制是否正常；
-- 为后续强化学习训练提供任务理解基础。
+* 验证 observation 读取是否正确；
+* 验证 action 控制方向是否正确；
+* 验证 gripper 开合符号是否正确；
+* 验证 reward 和 success 机制是否正常；
+* 为后续强化学习训练和模仿学习实验提供任务理解基础。
 
 ### Demo
 
@@ -344,18 +353,68 @@ notes/week03_panda_lift_minimal_rl.md
 
 该阶段主要完成：
 
-- 将 robosuite Panda Lift 环境封装为 Stable-Baselines3 可训练接口；
-- 对 observation 进行 flatten 处理；
-- 适配连续 action space；
-- 使用 SAC 进行最小训练实验；
-- 保存训练模型；
-- 记录 episode reward；
-- 绘制 reward 曲线；
-- 编写评估脚本检查训练结果。
+* 将 robosuite Panda Lift 环境封装为 Stable-Baselines3 可训练接口；
+* 对 observation 进行 flatten 处理；
+* 适配连续 action space；
+* 使用 SAC 进行最小训练实验；
+* 保存训练模型；
+* 记录 episode reward；
+* 绘制 reward 曲线；
+* 编写评估脚本检查训练结果。
 
 ### Results
 
 ![Panda Lift SAC Reward Curve](models/sac_panda_lift_minimal/reward_curve.png)
+
+---
+
+## 8. Panda Lift Behavior Cloning：模仿学习小实验
+
+在完成 Panda Lift 手工策略和最小 SAC 训练流程后，本项目进一步实现了一个 Behavior Cloning 模仿学习小实验。
+
+该实验使用前期实现的 Panda Lift handcrafted policy 作为 scripted expert，采集专家策略在 robosuite Lift 环境中的 observation-action demonstration 数据，并使用 PyTorch 构建 MLP policy 进行监督学习训练，使神经网络策略模仿手工专家策略的动作输出。
+
+核心文件：
+
+```bash
+src/collect_panda_lift_bc_data.py
+src/train_panda_lift_bc.py
+src/eval_panda_lift_bc.py
+data/panda_lift_bc_data.npz
+models/bc/panda_lift_bc_policy.pt
+```
+
+实验流程包括：
+
+1. 使用 handcrafted policy 根据当前 observation 和 phase 生成专家动作；
+2. 在每个仿真 step 记录 observation vector 和 expert action；
+3. 将 demonstration 数据保存为 `.npz` 文件；
+4. 使用 PyTorch Dataset / DataLoader 读取 BC 数据；
+5. 构建两层隐藏层 MLP policy，输入 observation，输出 7 维连续 action；
+6. 使用 MSE loss 训练 MLP policy 拟合专家动作；
+7. 将训练后的 policy 加载回 Panda Lift 环境进行闭环评估。
+
+本次实验采集数据规模为：
+
+```text
+Number of episodes: 30
+Number of samples: 9000
+Observation dimension: 15
+Action dimension: 7
+Best validation loss: 0.000045
+```
+
+其中 observation vector 包括：
+
+* Panda 末端执行器位置；
+* Panda 夹爪关节位置；
+* 方块位置；
+* 夹爪到方块的相对位置；
+* 当前任务阶段 phase 的 one-hot 编码。
+
+评估结果表明，训练后的 MLP policy 能够较好地拟合 handcrafted policy 的动作输出，并在环境中复现 phase 0 到 phase 3 的阶段行为，包括靠近方块、下降、闭合夹爪和尝试抬升。
+
+需要注意的是，当前 handcrafted policy 本身仍属于弱专家策略，采集数据时 success rate 为 0/30。因此，BC policy 虽然成功模仿了专家动作模式，但尚未获得稳定完成 lift 的能力。该实验的主要价值在于跑通了从 scripted expert、demonstration data、Behavior Cloning 到 policy evaluation 的完整模仿学习闭环，为后续改进专家策略、引入 DAgger 或使用 BC policy 初始化 SAC / PPO 训练打下基础。
 
 ---
 
@@ -365,30 +424,34 @@ notes/week03_panda_lift_minimal_rl.md
 
 目前项目已经完成：
 
-- MuJoCo 基础仿真环境搭建；
-- MJCF 模型结构与状态字段理解；
-- 自由落体仿真和曲线记录；
-- 单关节 PD 控制实验；
-- 单关节 PPO 强化学习训练闭环；
-- robosuite Panda Lift 环境接入；
-- Panda Lift observation / action / reward / success 分析；
-- Panda Lift 随机策略 baseline；
-- Panda Lift 手工策略验证；
-- Panda Lift 最小 SAC 训练流程；
-- 模型保存、reward 曲线和实验记录整理。
+* MuJoCo 基础仿真环境搭建；
+* MJCF 模型结构与状态字段理解；
+* 自由落体仿真和曲线记录；
+* 单关节 PD 控制实验；
+* 单关节 PPO 强化学习训练闭环；
+* robosuite Panda Lift 环境接入；
+* Panda Lift observation / action / reward / success 分析；
+* Panda Lift 随机策略 baseline；
+* Panda Lift 手工策略验证；
+* Panda Lift 最小 SAC 训练流程；
+* Panda Lift Behavior Cloning 模仿学习小实验；
+* 基于 handcrafted policy 采集 9000 条 observation-action demonstration 数据；
+* 使用 PyTorch MLP policy 完成专家动作拟合，best validation loss 达到 0.000045；
+* 模型保存、reward 曲线、数据集和实验记录整理。
 
 ### Honest Limitations
 
-当前项目仍处于机器人强化学习入门与流程验证阶段，存在以下边界：
+当前项目仍处于机器人强化学习和模仿学习入门与流程验证阶段，存在以下边界：
 
-- Panda Lift SAC 训练时间较短，尚未获得稳定高成功率策略；
-- 当前 SAC 实验主要用于验证训练闭环，不代表已经解决机械臂抓取任务；
-- PPO / SAC 超参数尚未进行系统性调参；
-- Panda Lift reward shaping、controller 配置和 observation 设计仍有优化空间；
-- 项目目前全部在仿真环境中完成，尚未迁移到真实机械臂；
-- 手工策略主要用于接口验证和任务理解，不是最终学习策略。
+* Panda Lift SAC 训练时间较短，尚未获得稳定高成功率策略；
+* 当前 SAC 实验主要用于验证训练闭环，不代表已经解决机械臂抓取任务；
+* 当前 Behavior Cloning policy 主要模仿 weak handcrafted expert，由于专家策略本身 success rate 较低，BC policy 尚未获得稳定 lift 能力；
+* PPO / SAC 超参数尚未进行系统性调参；
+* Panda Lift reward shaping、controller 配置和 observation 设计仍有优化空间；
+* 项目目前全部在仿真环境中完成，尚未迁移到真实机械臂；
+* 手工策略主要用于接口验证、任务理解和 demonstration 数据生成，不是最终学习策略。
 
-该项目的真实价值在于展示机器人学习项目从 0 到 1 的搭建能力，包括环境配置、任务理解、控制实验、强化学习训练接口封装、结果记录和问题边界分析。
+该项目的真实价值在于展示机器人学习项目从 0 到 1 的搭建能力，包括环境配置、任务理解、控制实验、强化学习训练接口封装、专家数据采集、模仿学习训练、结果记录和问题边界分析。
 
 ---
 
@@ -458,32 +521,44 @@ python src/train_panda_lift_sac.py
 python src/evaluate_panda_lift_sac.py
 ```
 
+### 9. Train and Evaluate Panda Lift Behavior Cloning
+
+```bash
+python src/collect_panda_lift_bc_data.py
+python src/train_panda_lift_bc.py
+python src/eval_panda_lift_bc.py
+```
+
 ---
 
 ## Future Work
 
 后续计划包括：
 
-- 系统调节 Panda Lift SAC / PPO 超参数；
-- 增加 success rate 曲线和多随机种子实验；
-- 优化 reward shaping；
-- 调整 robosuite controller 配置；
-- 引入 imitation learning / behavior cloning baseline；
-- 尝试更复杂的 robosuite 操作任务，例如 PickPlace、Stack、NutAssembly；
-- 探索 sim-to-real 和真实机器人操作任务迁移。
+* 改进 Panda Lift handcrafted policy，提高专家 demonstration 质量；
+* 系统调节 Panda Lift SAC / PPO 超参数；
+* 增加 success rate 曲线和多随机种子实验；
+* 优化 reward shaping；
+* 调整 robosuite controller 配置；
+* 尝试使用 Behavior Cloning policy 初始化 SAC / PPO 训练；
+* 探索 DAgger 等交互式模仿学习方法；
+* 尝试更复杂的 robosuite 操作任务，例如 PickPlace、Stack、NutAssembly；
+* 探索 sim-to-real 和真实机器人操作任务迁移。
 
 ---
 
 ## Project Positioning
 
-本项目是个人面向机器人学习、强化学习控制和具身智能方向的阶段性实践项目。
+本项目是个人面向机器人学习、强化学习控制、模仿学习和具身智能方向的阶段性实践项目。
 
 项目重点展示：
 
-- MuJoCo / robosuite 仿真环境搭建能力；
-- 机器人状态、动作、奖励和成功判据分析能力；
-- Python 强化学习实验代码组织能力；
-- Stable-Baselines3 训练流程使用能力；
-- 实验结果记录、可视化和真实边界表达能力。
+* MuJoCo / robosuite 仿真环境搭建能力；
+* 机器人状态、动作、奖励和成功判据分析能力；
+* Python 强化学习实验代码组织能力；
+* Stable-Baselines3 训练流程使用能力；
+* PyTorch 模仿学习实验实现能力；
+* 从 scripted expert 到 demonstration data，再到 neural policy evaluation 的模仿学习流程理解；
+* 实验结果记录、可视化和真实边界表达能力。
 
 该项目会作为后续学习机器人操作、模仿学习、强化学习控制和具身智能算法的基础。
