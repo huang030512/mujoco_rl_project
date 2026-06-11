@@ -285,3 +285,42 @@ Implication for Task C:
 
 Before adding data augmentation, the data collection pipeline should be improved to save episode-level information such as success, total reward, max lift, final lift, and episode_id. This will make it possible to filter or compare trajectories by quality.
 
+
+## Multi-Trajectory Data Quality Check
+
+A small-scale multi-trajectory dataset was collected using the new metric-aware data collection script.
+
+Command:
+
+- `python src/collect_panda_lift_bc_data_with_metrics.py --num-episodes 5 --horizon 300 --output data/panda_lift_bc_data_with_metrics_5ep.npz`
+
+Saved data:
+
+- Observations shape: `(1500, 15)`
+- Actions shape: `(1500, 7)`
+- Episode ids shape: `(1500,)`
+
+Results:
+
+| Episode | Total Reward | Success | Success Steps | Max Lift | Final Lift | Min EEF-Cube Dist |
+|---|---:|---|---:|---:|---:|---:|
+| 0 | 68.740 | False | 0 | 0.104 | -0.009 | 0.024 |
+| 1 | 56.718 | False | 0 | 0.000 | -0.010 | 0.024 |
+| 2 | 77.602 | False | 0 | 0.189 | -0.010 | 0.024 |
+| 3 | 61.266 | False | 0 | 0.025 | -0.010 | 0.024 |
+| 4 | 61.353 | False | 0 | 0.029 | -0.010 | 0.024 |
+
+Summary:
+
+- Success episodes: 0/5
+- Average total reward: 65.136
+- Average max lift: 0.069
+- The teacher policy consistently reaches the cube, as shown by the minimum end-effector-to-cube distance of about 0.024 m.
+- However, none of the 5 trajectories satisfy the success condition.
+- Most trajectories fail during the grasping and lifting stage.
+- The final lift values are close to zero or negative, meaning the cube is not stably held at the end of the episode.
+
+Diagnosis:
+
+The current multi-trajectory dataset should not be treated as clean expert demonstrations. The main bottleneck is teacher/data quality rather than the lack of behavior cloning model capacity. Before training a new BC model or adding data augmentation, the next step should be to improve the data collection pipeline by either filtering high-quality trajectories or improving the handcrafted teacher around grasp closure and lift stability.
+
