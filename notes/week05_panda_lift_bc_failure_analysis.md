@@ -324,3 +324,100 @@ Diagnosis:
 
 The current multi-trajectory dataset should not be treated as clean expert demonstrations. The main bottleneck is teacher/data quality rather than the lack of behavior cloning model capacity. Before training a new BC model or adding data augmentation, the next step should be to improve the data collection pipeline by either filtering high-quality trajectories or improving the handcrafted teacher around grasp closure and lift stability.
 
+
+## Handcrafted Policy Failure Cause Analysis
+
+After inspecting `src/run_panda_lift_handcrafted_policy.py`, the main reason for unstable grasping and lifting is that the handcrafted teacher uses a simple phase-based control logic rather than a true grasp-state-aware policy.
+
+Key findings:
+
+- Phase 0/1 mainly perform position-based reaching, which is relatively easy because the policy directly uses `eef_pos`, `cube_pos`, and `gripper_to_cube_pos`.
+- The policy can consistently move the end-effector close to the cube, which explains why both the teacher and BC model achieve small EEF-cube distance.
+- However, the transition from grasping to lifting is mainly based on step count instead of checking whether the cube has actually been grasped.
+- The policy does not verify stable contact, gripper closure state, cube lift state, or whether the cube is following the gripper.
+- During the lift phase, the end-effector may move upward even when the cube has not been securely grasped.
+- The lift action may also introduce horizontal disturbance because the target is still computed in xyz space rather than using a strictly stable upward motion.
+- If the cube is briefly lifted and then slips, the policy does not detect or recover from this failure.
+- The lifting speed may be too aggressive for an unstable grasp.
+
+Diagnosis:
+
+The handcrafted policy is useful as an interface validation tool and as a rough demonstration generator, but it is not yet a reliable expert policy. Its main weakness is not reaching, but grasp confirmation and stable lift execution.
+
+Implication:
+
+For Task C, directly training a new multi-trajectory BC model or adding data augmentation on top of this teacher data is not the best next step. The priority should be to improve the teacher policy or add trajectory filtering before treating the collected demonstrations as expert data.
+
+
+## Handcrafted Teacher V2 Trial and Failure Analysis
+
+A preliminary improved teacher policy was created as:
+
+- `src/run_panda_lift_handcrafted_policy_v2.py`
+
+The goal of V2 was to improve grasp and lift stability by using more conservative phase transitions, adding grasp waiting time, reducing XY disturbance during lifting, and avoiding video saving.
+
+Evaluation results:
+
+| Episode | Total Reward | Success Steps | Max Lift | Final Lift | Min EEF-Cube Dist |
+|---|---:|---:|---:|---:|---:|
+| 0 | 29.012 | 0 | 0.000 | -0.010 | 0.031 |
+| 1 | 29.372 | 0 | 0.000 | -0.010 | 0.030 |
+| 2 | 29.079 | 0 | 0.000 | -0.010 | 0.031 |
+
+Summary:
+
+- Success episodes: 0/3
+- Average total reward: 29.155
+- Average max lift: 0.000
+- Average min EEF-cube distance: about 0.031 m
+
+Diagnosis:
+
+V2 did not improve the teacher policy. It performed worse than V1 because the policy became too conservative. Although the end-effector still moved near the cube, the cube was never lifted. This suggests that V2 may either fail to enter the grasp/lift phases reliably, or enter them from a poor grasp pose.
+
+Possible causes:
+
+- Phase transition conditions may be too strict, especially from the descending/alignment phase to the grasp phase.
+- The grasp height may be too low or unsuitable for the Panda gripper geometry.
+- Locking the XY position at the start of grasping may preserve a small alignment error instead of correcting it.
+- The lift phase may be too slow or may start before a valid grasp is formed.
+- A small EEF-cube distance alone does not guarantee a valid grasp.
+
+Next diagnostic direction:
+
+Before further changing the policy, the next step should be to add explicit phase transition logging, including XY distance, Z distance, EEF-cube distance, current phase, and phase step. This will show whether V2 fails because it cannot enter the correct phase, or because it enters the phase but closes the gripper at a bad pose.
+
+
+## Teacher V2 Phase-2 Z-Control Improvement
+
+After diagnosing V2, the phase-2 grasp stage was found to have weak downward z control. The policy entered the grasp/lift phases, but `action[2]` was originally too small, so the end-effector did not move sufficiently toward the desired grasp height.
+
+A minimal change was made to strengthen the phase-2 downward z action while keeping the rest of the policy unchanged.
+
+Key diagnostic comparison:
+
+- Before change: `action[2]` was around `-0.022` during phase 2.
+- After change: `action[2]` was strengthened to around `-0.080` during phase 2.
+
+Evaluation results after the change:
+
+| Episode | Total Reward | Success Steps | Max Lift | Final Lift | Min EEF-Cube Dist |
+|---|---:|---:|---:|---:|---:|
+| 0 | 78.264 | 0 | 0.080 | -0.011 | 0.025 |
+| 1 | 184.724 | 0 | 0.171 | 0.171 | 0.025 |
+| 2 | 43.416 | 0 | 0.000 | -0.010 | 0.027 |
+
+Summary:
+
+- Success episodes: 0/3
+- Average total reward: 102.134
+- Average max lift: 0.084
+- Average min EEF-cube distance: 0.026
+
+Diagnosis:
+
+Strengthening the phase-2 downward z control clearly improved the teacher policy. Compared with the initial V2 trial, the average reward increased and the average max lift became positive. In Episode 1, the cube was lifted and remained elevated at the end of the episode.
+
+However, the policy is still not stable enough to be treated as a clean expert. Some episodes still fail to lift the cube, and success_steps remains zero. This suggests that the direction of improvement is correct, but the handcrafted teacher still requires further refinement before collecting high-quality BC demonstrations.
+
