@@ -229,7 +229,12 @@ def run_episode(env, episode_id, horizon=300, gripper_close_sign=1.0):
         current_max_lift = max_cube_z - init_cube_z
         min_eef_cube_dist = min(min_eef_cube_dist, eef_cube_dist)
 
-        success = bool(info.get("success", False))
+        success_from_info = bool(info.get("success", False))
+        try:
+            success_from_env = bool(env._check_success())
+        except AttributeError:
+            success_from_env = False
+        success = success_from_info or success_from_env
         if success:
             success_steps += 1
 

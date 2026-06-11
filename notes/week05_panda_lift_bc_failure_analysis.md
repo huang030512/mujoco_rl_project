@@ -421,3 +421,42 @@ Strengthening the phase-2 downward z control clearly improved the teacher policy
 
 However, the policy is still not stable enough to be treated as a clean expert. Some episodes still fail to lift the cube, and success_steps remains zero. This suggests that the direction of improvement is correct, but the handcrafted teacher still requires further refinement before collecting high-quality BC demonstrations.
 
+
+## Success Metric Fix and V2 Re-evaluation
+
+During V2 evaluation, an inconsistency was found: some episodes had high `max_lift` and `final_lift`, but `success_steps` remained zero.
+
+Code inspection showed that `env.step(action)` in the current robosuite setup may return an empty `info` dict, so using only `info.get("success", False)` is unreliable.
+
+The success check was updated to use both `info` and the environment's internal success function:
+
+- `success_from_info = bool(info.get("success", False))`
+- `success_from_env = bool(env._check_success())`
+- `success = success_from_info or success_from_env`
+
+This correction was applied to:
+
+- `src/run_panda_lift_handcrafted_policy_v2.py`
+- `src/collect_panda_lift_bc_data_with_metrics.py`
+
+V2 re-evaluation after fixing success statistics:
+
+| Episode | Total Reward | Success Steps | Max Lift | Final Lift | Min EEF-Cube Dist |
+|---|---:|---:|---:|---:|---:|
+| 0 | 190.421 | 143 | 0.173 | 0.173 | 0.026 |
+| 1 | 43.319 | 0 | 0.000 | -0.010 | 0.028 |
+| 2 | 44.254 | 0 | 0.000 | -0.010 | 0.026 |
+
+Summary:
+
+- Success episodes: 1/3
+- Average total reward: 92.665
+- Average max lift: 0.058
+- Average min EEF-cube distance: 0.027
+
+Diagnosis:
+
+The previous `success_steps=0` result was partly caused by an unreliable success source. After using `env._check_success()`, V2 correctly reports success when the cube is lifted above the robosuite Lift success threshold.
+
+However, V2 is still not a stable expert policy. It can complete the task in some episodes, but still fails in others. Therefore, it is better to continue treating V2 as an improved but imperfect teacher rather than as a clean expert demonstration source.
+

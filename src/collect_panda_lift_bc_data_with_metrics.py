@@ -109,8 +109,12 @@ def collect_data_with_metrics(
             # phase 必须用 step 后的新 obs 更新，保证下一轮输入和阶段同步。
             phase = update_phase(phase, step, eef_pos, cube_pos)
 
-            # robosuite 的 info 里会给出当前 step 是否达到任务成功条件。
-            success = bool(info.get("success", False))
+            success_from_info = bool(info.get("success", False))
+            try:
+                success_from_env = bool(env._check_success())
+            except AttributeError:
+                success_from_env = False
+            success = success_from_info or success_from_env
             if success:
                 success_steps += 1
 
