@@ -460,3 +460,42 @@ The previous `success_steps=0` result was partly caused by an unreliable success
 
 However, V2 is still not a stable expert policy. It can complete the task in some episodes, but still fails in others. Therefore, it is better to continue treating V2 as an improved but imperfect teacher rather than as a clean expert demonstration source.
 
+
+## Multi-Trajectory Data Quality Recheck After Success Fix
+
+After fixing the success metric to use `env._check_success()`, the 5-episode metric-aware data collection was repeated.
+
+Command:
+
+- `python src/collect_panda_lift_bc_data_with_metrics.py --num-episodes 5 --horizon 300 --output data/panda_lift_bc_data_with_metrics_5ep_recheck.npz`
+
+Saved data:
+
+- Observations shape: `(1500, 15)`
+- Actions shape: `(1500, 7)`
+- Episode ids shape: `(1500,)`
+
+Results:
+
+| Episode | Total Reward | Success | Success Steps | Max Lift | Final Lift | Min EEF-Cube Dist |
+|---|---:|---|---:|---:|---:|---:|
+| 0 | 192.133 | True | 134 | 1.079 | -0.015 | 0.023 |
+| 1 | 59.187 | False | 0 | 0.001 | -0.010 | 0.024 |
+| 2 | 192.791 | True | 136 | 1.066 | 0.219 | 0.022 |
+| 3 | 192.280 | True | 135 | 1.056 | -0.017 | 0.023 |
+| 4 | 192.619 | True | 135 | 1.068 | -0.012 | 0.023 |
+
+Summary:
+
+- Success episodes: 4/5
+- Average total reward: 165.802
+- Average max lift: 0.854
+- The previous `0/5` success result was caused by unreliable success reading from `info`.
+- After using `env._check_success()`, the original teacher can often trigger robosuite's Lift success condition.
+- However, several successful episodes still have negative final lift, which means the cube was lifted during the episode but was not held stably until the end.
+- Therefore, the teacher data should be considered partially successful but not perfectly stable.
+
+Updated diagnosis:
+
+The main issue is no longer that the teacher cannot trigger success. Instead, the teacher can often lift the cube, but grasp retention is unstable. For BC training, this means trajectory quality should not be judged by success alone. `max_lift`, `final_lift`, and `success_steps` should be considered together.
+
