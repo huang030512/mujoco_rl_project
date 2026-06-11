@@ -256,3 +256,32 @@ Initial diagnosis:
 
 The baseline BC policy has learned part of the reaching behavior, but the grasp-lift behavior is unstable. This supports the next experiment: collecting multiple trajectories to improve state coverage, especially around the grasping and lifting phases.
 
+
+## Handcrafted Teacher Policy Diagnosis
+
+Before improving the BC dataset, the handcrafted policy used as the teacher was evaluated.
+
+Evaluation command:
+
+- `python src/run_panda_lift_handcrafted_policy.py`
+
+Results:
+
+| Episode | Total Reward | Success Steps | Observation |
+|---|---:|---:|---|
+| 0 | 194.764 | 0 | Cube was lifted very high, but robosuite success was not triggered. |
+| 1 | 79.860 | 0 | Cube was briefly lifted, then dropped during the lift phase. |
+| 2 | 193.357 | 0 | Cube was lifted very high, but success was still not triggered. |
+
+Summary:
+
+- Average total reward: 155.994
+- Average success steps: 0.000
+- The handcrafted teacher can reach the cube and often lift it, but the success condition is not reliably satisfied.
+- This means the current BC dataset should not be treated as clean expert demonstrations.
+- The BC failure is likely related not only to model generalization, but also to teacher/data quality.
+
+Implication for Task C:
+
+Before adding data augmentation, the data collection pipeline should be improved to save episode-level information such as success, total reward, max lift, final lift, and episode_id. This will make it possible to filter or compare trajectories by quality.
+
