@@ -551,3 +551,54 @@ Implication for BC training:
 
 The next BC experiment should not blindly train on all collected trajectories. A better next step is to create a filtered dataset that excludes clearly failed episodes and compares it against the unfiltered multi-trajectory dataset.
 
+
+## Success-Filtered Dataset Generation
+
+A trajectory filtering script was added to create a success-filtered BC dataset from the 10-episode metric-aware dataset.
+
+Script:
+
+- `src/filter_panda_lift_bc_data_by_quality.py`
+
+Input:
+
+- `data/panda_lift_bc_data_with_metrics_10ep.npz`
+
+Output:
+
+- `data/panda_lift_bc_data_filtered_success_10ep.npz`
+
+Filtering rule:
+
+- Keep episodes where `success=True`.
+
+Kept episodes:
+
+| Episode | Success | Success Steps | Max Lift | Final Lift |
+|---|---|---:|---:|---:|
+| 0 | True | 132 | 1.083 | -0.012 |
+| 2 | True | 134 | 1.066 | -0.016 |
+| 4 | True | 134 | 1.067 | -0.382 |
+| 5 | True | 8 | 0.079 | -0.012 |
+| 6 | True | 136 | 1.068 | 0.094 |
+| 9 | True | 44 | 0.483 | -0.010 |
+
+Summary:
+
+- Original episodes: 10
+- Kept episodes: 6
+- Removed failed episodes: 1, 3, 7, 8
+- Expected filtered samples: 6 episodes × 300 steps = 1800 samples
+
+Diagnosis:
+
+The success-filtered dataset removes clearly failed trajectories, but it is still not perfectly clean. Several kept trajectories triggered success during the episode but had negative final lift, meaning the cube was lifted and then dropped. Therefore, this dataset is suitable for a first filtered BC experiment, but it should not be interpreted as a fully high-quality expert dataset.
+
+Experiment role:
+
+This dataset will be used as the C group in the BC comparison:
+
+- A group: existing baseline BC
+- B group: unfiltered 10-episode multi-trajectory BC
+- C group: success-filtered 10-episode multi-trajectory BC
+
