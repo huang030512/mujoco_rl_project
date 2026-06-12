@@ -156,4 +156,23 @@ def diagnose_bc(
 
 
 if __name__ == "__main__":
-    diagnose_bc(num_episodes=3)
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Diagnose Panda Lift BC policy.")
+    parser.add_argument(
+        "--model",
+        default="models/bc/panda_lift_bc_policy.pt",
+        help="Path to the BC policy checkpoint.",
+    )
+    parser.add_argument(
+        "--episodes",
+        type=int,
+        default=3,
+        help="Number of episodes to evaluate.",
+    )
+    args = parser.parse_args()
+
+    print(f"Evaluation model path: {args.model}")
+    print(f"Evaluation episodes: {args.episodes}")
+
+    diagnose_bc(model_path=args.model, num_episodes=args.episodes)

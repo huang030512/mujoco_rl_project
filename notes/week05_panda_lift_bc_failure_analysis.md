@@ -602,3 +602,80 @@ This dataset will be used as the C group in the BC comparison:
 - B group: unfiltered 10-episode multi-trajectory BC
 - C group: success-filtered 10-episode multi-trajectory BC
 
+
+## BC Training and Evaluation: Unfiltered vs Success-Filtered Data
+
+Two additional BC policies were trained using the 10-episode metric-aware dataset.
+
+Training setup:
+
+- B group: unfiltered 10-episode dataset
+  - Data: `data/panda_lift_bc_data_with_metrics_10ep.npz`
+  - Model: `models/bc/panda_lift_bc_multitraj_10ep.pt`
+  - Best validation loss: `0.000263`
+
+- C group: success-filtered 10-episode dataset
+  - Data: `data/panda_lift_bc_data_filtered_success_10ep.npz`
+  - Model: `models/bc/panda_lift_bc_filtered_success_10ep.pt`
+  - Best validation loss: `0.000484`
+
+Evaluation setting:
+
+- Script: `src/eval_panda_lift_bc_diagnose.py`
+- Episodes: 3
+- Success check: `info["success"]` OR `env._check_success()`
+
+### B Group: Unfiltered 10-Episode BC
+
+| Episode | Total Reward | Success | Max Lift | Final Lift | Min EEF-Cube Dist |
+|---|---:|---|---:|---:|---:|
+| 0 | 63.119 | True | 0.025 | -0.011 | 0.025 |
+| 1 | 44.771 | False | 0.000 | -0.010 | 0.028 |
+| 2 | 74.759 | True | 0.156 | -0.010 | 0.025 |
+
+Summary:
+
+- Success episodes: 2/3
+- Average reward: 60.883
+- Average max lift: 0.060
+- Average final lift: -0.010
+
+### C Group: Success-Filtered 10-Episode BC
+
+| Episode | Total Reward | Success | Max Lift | Final Lift | Min EEF-Cube Dist |
+|---|---:|---|---:|---:|---:|
+| 0 | 48.881 | False | 0.000 | -0.010 | 0.025 |
+| 1 | 60.030 | False | 0.000 | -0.010 | 0.024 |
+| 2 | 3.895 | False | 0.000 | -0.010 | 0.126 |
+
+Summary:
+
+- Success episodes: 0/3
+- Average reward: 37.602
+- Average max lift: 0.000
+- Average final lift: -0.010
+
+### Comparison with Baseline
+
+| Group | Data | Success Episodes | Main Observation |
+|---|---|---:|---|
+| A | Original baseline BC data | 1/3 | Can reach the cube and occasionally lift, but unstable. |
+| B | Unfiltered 10-episode data | 2/3 | Improves success rate, but final lift remains negative. |
+| C | Success-filtered 10-episode data | 0/3 | Filtering by success alone hurts performance. |
+
+Diagnosis:
+
+The unfiltered multi-trajectory dataset improves rollout success compared with the baseline, but it still does not produce stable final grasp retention. The success-filtered dataset performs worse, showing that `success=True` alone is not a sufficient criterion for high-quality BC demonstrations.
+
+A likely reason is that many success-filtered trajectories are not truly clean expert trajectories. Several kept trajectories triggered success during the episode but dropped the cube before the end. Filtering by success also reduces data diversity and removes some reaching behavior coverage, which may explain why the filtered policy performs worse.
+
+Conclusion:
+
+For Panda Lift BC, trajectory quality cannot be judged only by environment success. More reliable filtering should combine:
+
+- `success=True`
+- sufficiently large `success_steps`
+- high `max_lift`
+- positive `final_lift`
+- stable end-of-episode grasp retention
+

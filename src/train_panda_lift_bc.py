@@ -198,4 +198,22 @@ def train_bc(
 
 
 if __name__ == "__main__":
-    train_bc()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Train Panda Lift BC policy.")
+    parser.add_argument(
+        "--data",
+        default="data/panda_lift_bc_data.npz",
+        help="Path to the BC training .npz data file.",
+    )
+    parser.add_argument(
+        "--output",
+        default="models/bc/panda_lift_bc_policy.pt",
+        help="Path to save the trained BC policy checkpoint.",
+    )
+    args = parser.parse_args()
+
+    print(f"Training data path: {args.data}")
+    print(f"Model save path: {args.output}")
+
+    train_bc(data_path=args.data, save_path=args.output)
