@@ -499,3 +499,55 @@ Updated diagnosis:
 
 The main issue is no longer that the teacher cannot trigger success. Instead, the teacher can often lift the cube, but grasp retention is unstable. For BC training, this means trajectory quality should not be judged by success alone. `max_lift`, `final_lift`, and `success_steps` should be considered together.
 
+
+## 10-Episode Multi-Trajectory Dataset Quality Analysis
+
+A 10-episode metric-aware BC dataset was collected for multi-trajectory analysis.
+
+Command:
+
+- `python src/collect_panda_lift_bc_data_with_metrics.py --num-episodes 10 --horizon 300 --output data/panda_lift_bc_data_with_metrics_10ep.npz`
+
+Saved data:
+
+- Observations shape: `(3000, 15)`
+- Actions shape: `(3000, 7)`
+- Episode ids shape: `(3000,)`
+
+Episode-level quality table:
+
+| Episode | Total Reward | Success | Success Steps | Max Lift | Final Lift | Min Dist | Quality |
+|---|---:|---|---:|---:|---:|---:|---|
+| 0 | 191.367 | True | 132 | 1.083 | -0.012 | 0.023 | B_success_but_dropped |
+| 1 | 60.342 | False | 0 | 0.000 | -0.010 | 0.024 | D_failed |
+| 2 | 190.762 | True | 134 | 1.066 | -0.016 | 0.023 | B_success_but_dropped |
+| 3 | 52.050 | False | 0 | 0.000 | -0.010 | 0.024 | D_failed |
+| 4 | 191.780 | True | 134 | 1.067 | -0.382 | 0.023 | B_success_but_dropped |
+| 5 | 65.832 | True | 8 | 0.079 | -0.012 | 0.024 | C_weak_success |
+| 6 | 193.897 | True | 136 | 1.068 | 0.094 | 0.022 | A_good |
+| 7 | 51.765 | False | 0 | 0.000 | -0.010 | 0.024 | D_failed |
+| 8 | 49.039 | False | 0 | 0.000 | -0.010 | 0.024 | D_failed |
+| 9 | 101.927 | True | 44 | 0.483 | -0.010 | 0.024 | C_weak_success |
+
+Summary:
+
+- Success episodes: 6/10
+- Average reward: 114.876
+- Average max lift: 0.485
+- Average final lift: -0.038
+
+Quality distribution:
+
+- `A_good`: Episode 6
+- `B_success_but_dropped`: Episodes 0, 2, 4
+- `C_weak_success`: Episodes 5, 9
+- `D_failed`: Episodes 1, 3, 7, 8
+
+Diagnosis:
+
+The 10-episode dataset contains useful demonstrations but is not uniformly high quality. Only one episode both achieves success and maintains a positive final lift. Several episodes trigger success but drop the cube later, and four episodes fail completely.
+
+Implication for BC training:
+
+The next BC experiment should not blindly train on all collected trajectories. A better next step is to create a filtered dataset that excludes clearly failed episodes and compares it against the unfiltered multi-trajectory dataset.
+
